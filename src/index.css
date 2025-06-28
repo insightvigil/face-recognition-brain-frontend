@@ -1,0 +1,17 @@
+html {
+  font-size: 62.5%;
+}
+
+body {
+  
+  margin:0;
+  padding:0;
+  font-family: "Courier New", "Courier", "Monospace"; 
+  box-sizing: border-box;
+  background: linear-gradient(89deg, #4F9DFF 0%, #A8D5FF 100%)
+
+}
+
+button {
+  cursor:pointer;
+}
