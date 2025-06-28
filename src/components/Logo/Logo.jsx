@@ -6,8 +6,8 @@ const Logo = () => {
 
     return(
       <section className='ma4 mt0'>
-        <Tilt>
-            <div className='Tilt' >
+        <Tilt className='Tilt'>
+            <div  >
             </div>
         </Tilt>
 
