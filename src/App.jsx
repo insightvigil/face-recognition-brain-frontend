@@ -5,6 +5,8 @@ import Logo from './components/Logo/Logo'
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm'
 import Rank from './components/Rank/Rank'
 import FaceRecognition from './components/FaceRecognition/FaceRecognition'
+import Signin from './components/Signin/Signin'
+import Register from './components/Register/Register'
 import 'tachyons'
 //import Clarifai from 'clarifai'
 
@@ -12,7 +14,8 @@ function App() {
   const [input, setInput] = useState('')
   const [imgUrl,setImgUrl]=useState(null)
   const [box,setbox]=useState({})
-
+  const [route,setRoute] =useState('signIn')
+  const [sign,setSign]=useState(false)
   /*const app = new Clarifai.App({
     apiKey:'88fc2ca5753e40ae89c25e21b84f21b8'
   })*/
@@ -122,14 +125,40 @@ const returnClarifaiRequestOptions = (imgUrl) => {
 
 }
 
+const onRouteChange = (route) => {
+  if (route==='signOut') {
+    setSign(false)
+  }
+  else if (route==='home'){
+    setSign(true)
+  }
+
+  setRoute(route)
+}
 
   return (
     <>
-      <Navigation/>
+      <Navigation isSignedIn={sign} onRouteChange={onRouteChange}/>
+      { route === 'home'? 
+
+       <>
       <Logo/>
       <Rank/>
       <ImageLinkForm input={input} onInputChange={onInputChange} onButtonSubmit={handleSubmit}/>
       <FaceRecognition box={box} imageUrl={imgUrl}/>
+      </>
+
+      
+      
+      :
+      (route === 'signIn') ?
+      <>
+      <Signin onRouteChange={onRouteChange}/>
+      </>
+      :
+      <Register onRouteChange={onRouteChange}/>
+
+      }
     
     </>
   )
