@@ -4,7 +4,7 @@ const Rank = () => {
     return(
         <article>
             <section className='white f3'>
-                {'Andrei, your current rank is: '}
+                {'Stranger, your current rank is: '}
             </section>
             <section className="white f1">
                 #1

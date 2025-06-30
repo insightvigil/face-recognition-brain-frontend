@@ -8,3 +8,8 @@
     background-color: slategray;
     background-size:100px 100px, 100px 100px, 50px 50px, 50px 50px;
 }
+
+.articleW {
+  width: auto;
+  min-width: 429;
+}
