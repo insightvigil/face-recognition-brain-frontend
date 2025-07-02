@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Navigation from './components/Navigation/Navigation'
 import Logo from './components/Logo/Logo'
@@ -16,10 +16,21 @@ function App() {
   const [box,setbox]=useState({})
   const [route,setRoute] =useState('signIn')
   const [sign,setSign]=useState(false)
+
   /*const app = new Clarifai.App({
     apiKey:'88fc2ca5753e40ae89c25e21b84f21b8'
   })*/
   
+    //After render run this code
+/*
+  useEffect(() => {
+    fetch('http://localhost:5001')
+      .then(response => response.json())
+      .then(data => console.log(data));
+  }, []); // empty array = run once (on mount)
+
+  return <div>Data Retrieved</div>;
+  */
   const calculateFaceLocation = (data) => {
 
     const clarifaiFace=  data.outputs[0].data.regions[0].region_info.bounding_box
