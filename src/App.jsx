@@ -9,11 +9,12 @@ import Signin from './components/Signin/Signin'
 import Register from './components/Register/Register'
 import 'tachyons'
 //import Clarifai from 'clarifai'
+//'https://samples.clarifai.com/face-det.jpg'
 
 function App() {
   const [input, setInput] = useState('')
   const [imgUrl,setImgUrl]=useState(null)
-  const [box,setbox]=useState({})
+  const [box,setBox]=useState([])
   const [route,setRoute] =useState('signIn')
   const [sign,setSign]=useState(false)
   const [user,setUser]=useState({
@@ -24,20 +25,45 @@ function App() {
     joined:''
   })
 
-  /*const app = new Clarifai.App({
-    apiKey:'88fc2ca5753e40ae89c25e21b84f21b8'
-  })*/
-  
-    //After render run this code
-/*
-  useEffect(() => {
-    fetch('http://localhost:5001')
-      .then(response => response.json())
-      .then(data => console.log(data));
-  }, []); // empty array = run once (on mount)
 
-  return <div>Data Retrieved</div>;
-  */
+
+  const returnRequestOptions = (imageUrl) => {
+    const PAT = '557c14de7ba941b08ac00854fee53f75';
+    const USER_ID = 'insightvigil';
+    const APP_ID = 'test';
+    const IMAGE_URL = imageUrl;
+    
+
+    const raw = JSON.stringify({
+    "user_app_id": {
+        "user_id": USER_ID,
+        "app_id": APP_ID
+    },
+    "inputs": [
+        {
+            "data": {
+                "image": {
+                    "url": IMAGE_URL
+                    // "base64": IMAGE_BYTES_STRING
+                }
+            }
+        }
+    ]
+});
+
+  const requestOptions = {
+      method: 'POST',
+      headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Key ' + PAT
+      },
+      body: raw
+  };
+
+  return requestOptions
+
+  }
+
 
   const loadUser = (data) => {
     setUser(
@@ -52,86 +78,134 @@ function App() {
 
   }
 
-  const calculateFaceLocation = (data) => {
-    const boundingBox = data.outputs[0].data.regions[0].region_info.bounding_box;
-    const image = document.getElementById('inputImage');
-    const width = Number(image.width);
-    const height = Number(image.height);
-    return {
-      leftCol: boundingBox.left_col * width,
-      topRow: boundingBox.top_row * height,
-      rightCol: width - (boundingBox.right_col * width),
-      bottomRow: height - (boundingBox.bottom_row * height)
-    }
-  }
 
-  const displayFaceBox = (box) => {
-    setbox(box)
-  }
+  const calculateFaceLocation = (data) => {
+  const image = document.getElementById('inputImage');
+  if (!image) return [];
+
+  const width = image.width;
+  const height = image.height;
+
+  return data.outputs[0].data.regions.map(region => {
+    const boundingBox = region.region_info.bounding_box;
+    return {
+      leftCol: `${boundingBox.left_col * width}px`,
+      topRow: `${boundingBox.top_row * height}px`,
+      rightCol: `${(1 - boundingBox.right_col) * width}px`,
+      bottomRow: `${(1 - boundingBox.bottom_row) * height}px`
+    };
+  });
+};
+
+const displayFaceBox = (data) => {
+  const boxes = calculateFaceLocation(data);
+  setBox(boxes);
+};
 
   const onInputChange = (event) => {
     setInput(event.target.value)
     console.log('Click',input)
   }
-/*-------------------------Aquí inicia el controlador de face recognition ------------------*/  
-  const handleSubmit = () => {
-    setImgUrl(input); // para mostrar la imagen en la app
 
-  const PAT = '557c14de7ba941b08ac00854fee53f75';
-  const USER_ID = 'insightvigil';
-  const APP_ID = 'test';
+/*
+const handleSubmit = () => {
   const MODEL_ID = 'face-detection';
   const MODEL_VERSION_ID = '6dc7e46bc9124c5c8824be4822abe105';
 
-  const raw = JSON.stringify({
-    user_app_id: {
-      user_id: USER_ID,
-      app_id: APP_ID
-    },
-    inputs: [
-      {
-        data: {
-          image: {
-            url: input
-          }
-        }
-      }
-    ]
-  });
+  setImgUrl(input); // para mostrar la imagen en FaceRecognition
 
-  const requestOptions = {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      Authorization: 'Key ' + PAT
-    },
-    body: raw
-  };
-
-  fetch(`https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`, requestOptions)
+  fetch(
+    `https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`,
+    returnRequestOptions(input) // puedes usar `input` o `imgUrl`, ya tienen lo mismo
+  )
     .then(response => response.json())
     .then(result => {
-      if (result.outputs && result.outputs[0].data.regions) {
-        const box = calculateFaceLocation(result); // Calcula coordenadas reales
-        displayFaceBox(box); // Actualiza estado para dibujar la caja
+      const regions = result.outputs?.[0]?.data?.regions;
 
-        // Opcional: Actualiza el contador en tu backend
+      if (regions && Array.isArray(regions)) {
+        // Muestra las cajas en la imagen
+        displayFaceBox(result);
+
+        // Solo para depurar: muestra nombre y probabilidad
+        regions.forEach((region, index) => {
+          const boundingBox = region.region_info.bounding_box;
+          const topRow = boundingBox.top_row.toFixed(3);
+          const leftCol = boundingBox.left_col.toFixed(3);
+          const bottomRow = boundingBox.bottom_row.toFixed(3);
+          const rightCol = boundingBox.right_col.toFixed(3);
+
+          if (region.data?.concepts) {
+            region.data.concepts.forEach(concept => {
+              const name = concept.name;
+              const value = concept.value.toFixed(4);
+              console.log(
+                `#${index + 1} ${name}: ${value} BBox: ${topRow}, ${leftCol}, ${bottomRow}, ${rightCol}`
+              );
+            });
+          }
+        });
+      } else {
+        console.log('No se detectaron rostros');
+        setBox([]); // limpiar si no hay rostros
+      }
+    })
+    .catch(error => {
+      console.error('Error al contactar Clarifai:', error);
+    });
+};*/
+
+const handleSubmit = () => {
+  const MODEL_ID = 'face-detection';
+  const MODEL_VERSION_ID = '6dc7e46bc9124c5c8824be4822abe105';
+
+  setImgUrl(input); // Mostrar imagen en la interfaz
+
+  fetch(
+    `https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`,
+    returnRequestOptions(input) // Genera el body y headers con tu PAT
+  )
+    .then(response => response.json())
+    .then(result => {
+      const regions = result.outputs?.[0]?.data?.regions;
+
+      if (regions && Array.isArray(regions)) {
+        // ✅ Llama a tu servidor para actualizar el contador de entradas
         fetch('http://localhost:5001/image', {
           method: 'put',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: user.id })
         })
-          .then(response => response.json())
+          .then(res => res.json())
           .then(count => {
-            setUser(prevUser => ({...prevUser, entries: count}));
-            console.log(user)
+            setUser({ ...user, entries: count }); // Actualiza el Rank
+          })
+          .catch(err => console.log('Error al actualizar entradas:', err));
+
+        // ✅ Muestra las cajas faciales en la imagen
+        displayFaceBox(result);
+
+        // 🧪 (opcional) Imprimir resultados en consola
+        regions.forEach((region, index) => {
+          const bbox = region.region_info.bounding_box;
+          const concepts = region.data?.concepts || [];
+          console.log(
+            `#${index + 1} BBox: ${bbox.top_row}, ${bbox.left_col}, ${bbox.bottom_row}, ${bbox.right_col}`
+          );
+          concepts.forEach(concept => {
+            console.log(`  ${concept.name}: ${concept.value.toFixed(4)}`);
           });
+        });
+
+      } else {
+        console.log('No se detectaron rostros');
+        setBox([]); // Limpia cualquier caja anterior
       }
     })
-    .catch(error => console.log('Error al llamar a Clarifai:', error));
-  } 
+    .catch(error => {
+      console.error('Error al contactar Clarifai:', error);
+    });
+};
 
-/*-----------------------------------------------------------------------------*/ 
 
 
 const onRouteChange = (route) => {

@@ -22,12 +22,12 @@ const  onSubmitSignIn = () => {
             password: password
         })
     }) 
-    .then(response => response.json())
-    .then(user => {
-        if (user.id) {
-            loadUser(user)
-            onRouteChange('home')
-        }
+        .then(response => response.json())
+        .then(user => {
+            if (user.id) {
+                loadUser(user)
+                onRouteChange('home')
+            }
     })
     }
 
