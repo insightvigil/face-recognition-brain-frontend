@@ -16,6 +16,13 @@ function App() {
   const [box,setbox]=useState({})
   const [route,setRoute] =useState('signIn')
   const [sign,setSign]=useState(false)
+  const [user,setUser]=useState({
+    id: '',
+    name:'',
+    email:'',
+    entries:0,
+    joined:''
+  })
 
   /*const app = new Clarifai.App({
     apiKey:'88fc2ca5753e40ae89c25e21b84f21b8'
@@ -31,19 +38,30 @@ function App() {
 
   return <div>Data Retrieved</div>;
   */
+
+  const loadUser = (data) => {
+    setUser(
+      {
+      id: data.id,
+      name:data.name,
+      email:data.email,
+      entries:data.entries,
+      joined:data.joined
+      }
+    )
+
+  }
+
   const calculateFaceLocation = (data) => {
-
-    const clarifaiFace=  data.outputs[0].data.regions[0].region_info.bounding_box
-    const image = document.getElementById('inputImage')
-    const width = Number(image.width)
-    const height = Number(image.height)
+    const boundingBox = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputImage');
+    const width = Number(image.width);
+    const height = Number(image.height);
     return {
-      leftCol: clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row*height,
-      rightCol: width - (clarifaiFace.right_col*width),
-      bottomRow: height - (clarifaiFace.bottom_row*height)
-
-
+      leftCol: boundingBox.left_col * width,
+      topRow: boundingBox.top_row * height,
+      rightCol: width - (boundingBox.right_col * width),
+      bottomRow: height - (boundingBox.bottom_row * height)
     }
   }
 
@@ -57,84 +75,64 @@ function App() {
   }
 /*-------------------------Aquí inicia el controlador de face recognition ------------------*/  
   const handleSubmit = () => {
-    console.log('Input enviado desde App:', input);
-    setImgUrl(input);
+    setImgUrl(input); // para mostrar la imagen en la app
 
-    // app.models.predict('face-detection', input)
-    fetch("https://api.clarifai.com/v2/models/" + "face-detection" + "/outputs", returnClarifaiRequestOptions(input))
-    .then(response => response.json())
-    .then(result => {
-
-        const regions = result.outputs[0].data.regions;
-
-        regions.forEach(region => {
-            // Accessing and rounding the bounding box values
-            const boundingBox = region.region_info.bounding_box;
-            const topRow = boundingBox.top_row.toFixed(3);
-            const leftCol = boundingBox.left_col.toFixed(3);
-            const bottomRow = boundingBox.bottom_row.toFixed(3);
-            const rightCol = boundingBox.right_col.toFixed(3);
-
-            region.data.concepts.forEach(concept => {
-                // Accessing and rounding the concept value
-                const name = concept.name;
-                const value = concept.value.toFixed(4);
-
-                console.log(`${name}: ${value} BBox: ${topRow}, ${leftCol}, ${bottomRow}, ${rightCol}`);
-                
-            });
-        });
-        return result;
-    })//Result End
-    .then(response => displayFaceBox(calculateFaceLocation(response)))
-    .catch(err => console.log(err));
-
-
-  } 
-
-/*-----------------------------------------------------------------------------*/ 
-const returnClarifaiRequestOptions = (imgUrl) => {
-  // Your PAT (Personal Access Token) can be found in the Account's Security section
   const PAT = '557c14de7ba941b08ac00854fee53f75';
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
   const USER_ID = 'insightvigil';
   const APP_ID = 'test';
-  // Change these to whatever model and image URL you want to use
   const MODEL_ID = 'face-detection';
   const MODEL_VERSION_ID = '6dc7e46bc9124c5c8824be4822abe105';
-  const IMAGE_URL = imgUrl;
 
   const raw = JSON.stringify({
-    "user_app_id": {
-        "user_id": USER_ID,
-        "app_id": APP_ID
+    user_app_id: {
+      user_id: USER_ID,
+      app_id: APP_ID
     },
-    "inputs": [
-        {
-            "data": {
-                "image": {
-                    "url": IMAGE_URL
-                    // "base64": IMAGE_BYTES_STRING
-                }
-            }
+    inputs: [
+      {
+        data: {
+          image: {
+            url: input
+          }
         }
+      }
     ]
-});
+  });
 
   const requestOptions = {
     method: 'POST',
     headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Key ' + PAT
+      Accept: 'application/json',
+      Authorization: 'Key ' + PAT
     },
     body: raw
-};
+  };
 
-  return requestOptions
+  fetch(`https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`, requestOptions)
+    .then(response => response.json())
+    .then(result => {
+      if (result.outputs && result.outputs[0].data.regions) {
+        const box = calculateFaceLocation(result); // Calcula coordenadas reales
+        displayFaceBox(box); // Actualiza estado para dibujar la caja
 
+        // Opcional: Actualiza el contador en tu backend
+        fetch('http://localhost:5001/image', {
+          method: 'put',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: user.id })
+        })
+          .then(response => response.json())
+          .then(count => {
+            setUser(prevUser => ({...prevUser, entries: count}));
+            console.log(user)
+          });
+      }
+    })
+    .catch(error => console.log('Error al llamar a Clarifai:', error));
+  } 
 
-}
+/*-----------------------------------------------------------------------------*/ 
+
 
 const onRouteChange = (route) => {
   if (route==='signOut') {
@@ -152,9 +150,9 @@ const onRouteChange = (route) => {
       <Navigation isSignedIn={sign} onRouteChange={onRouteChange}/>
       { route === 'home'? 
 
-       <>
+      <>
       <Logo/>
-      <Rank/>
+      <Rank name={user.name} entries={user.entries}/>
       <ImageLinkForm input={input} onInputChange={onInputChange} onButtonSubmit={handleSubmit}/>
       <FaceRecognition box={box} imageUrl={imgUrl}/>
       </>
@@ -164,10 +162,10 @@ const onRouteChange = (route) => {
       :
       (route === 'signIn') ?
       <>
-      <Signin onRouteChange={onRouteChange}/>
+      <Signin loadUser={loadUser} onRouteChange={onRouteChange}/>
       </>
       :
-      <Register onRouteChange={onRouteChange}/>
+      <Register loadUser={loadUser} onRouteChange={onRouteChange}/>
 
       }
     

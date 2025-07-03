@@ -1,13 +1,12 @@
 import React from 'react'
-
-const Rank = () => {
+const Rank = ({name,entries}) => {
     return(
         <article>
             <section className='white f3'>
-                {'Stranger, your current rank is: '}
+                {`${name}, your current entry county is...`}
             </section>
             <section className="white f1">
-                #1
+                {entries}
             </section>
         </article>
 
