@@ -1,6 +1,8 @@
 ## Face recognition 🚀
 
-A web page where you can upload an image and it detects faces within it. 
+A web page where you can upload an image and it detects faces within it.  
+
+_This repository contains only the frontend; the backend is hosted separately_ [here](https://github.com/insightvigil/face-recognition-brain-backend).
 
 ### Applied technologies 🧑‍💻
 - HTML
