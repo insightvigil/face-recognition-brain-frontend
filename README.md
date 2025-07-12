@@ -1,4 +1,4 @@
-## Face recognition 🚀
+## Face recognition - Frontend 🚀
 
 A web page where you can upload an image and it detects faces within it.  
 
