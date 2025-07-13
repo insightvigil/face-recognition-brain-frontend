@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://insightvigil.github.io/face-recognition-brain",
+  "homepage": "https://insightvigil.github.io/face-recognition-brain-frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
