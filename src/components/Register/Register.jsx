@@ -20,7 +20,7 @@ const Register = ({onRouteChange,loadUser}) => {
     }
 
     const  onSubmitSignIn = () => {
-    fetch('http://localhost:5001/register', {
+    fetch('https://face-recognition-brain-backend-x0ti.onrender.com/register', {
         method: 'post',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({

@@ -127,7 +127,7 @@ const handleSubmit = () => {
 
       if (regions && Array.isArray(regions)) {
         // ✅ Llama a tu servidor para actualizar el contador de entradas
-        fetch('http://localhost:5001/image', {
+        fetch('https://face-recognition-brain-backend-x0ti.onrender.com/image', {
           method: 'put',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: user.id })
