@@ -7,3 +7,8 @@
     cursor: pointer;
 
 }
+
+.mark {
+    left: 50%;
+    transform: translateX(-50%);
+}
